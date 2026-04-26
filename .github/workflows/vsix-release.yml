@@ -66,23 +66,23 @@ jobs:
 
       - name: Package VSIX
         run: |
-          mkdir -p .artifacts
-          npx @vscode/vsce package --allow-package-secrets sendgrid --out ".artifacts/${{ steps.meta.outputs.name }}-${{ steps.meta.outputs.version }}.vsix"
+          mkdir -p artifacts
+          npx @vscode/vsce package --allow-package-secrets sendgrid --out "artifacts/${{ steps.meta.outputs.name }}-${{ steps.meta.outputs.version }}.vsix"
 
       - name: Verify VSIX artifact
-        run: ls -la .artifacts/
+        run: ls -la artifacts/
 
       - name: Upload VSIX artifact
         uses: actions/upload-artifact@v7
         with:
           name: vsix-${{ steps.meta.outputs.name }}-${{ steps.meta.outputs.version }}
-          path: .artifacts/*.vsix
+          path: artifacts/*.vsix
           if-no-files-found: error
 
       - name: Publish GitHub release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: .artifacts/*.vsix
+          files: artifacts/*.vsix
           generate_release_notes: true
           fail_on_unmatched_files: true
