@@ -15,11 +15,6 @@ concurrency:
 
 env:
   NODE_VERSION: 22.21.x
-  PYTHON_VERSION: '3.12'
-  DOTNET_VERSION: '10.0'
-  EMSDK_VERSION: 3.1.55
-  EMSDK_COMMIT: 0fde04880048f743056bed17cb0543a42e040fae
-  EMSDK_DIR: ${{ github.workspace }}/.build/emsdk
   NODE_OPTIONS: --max-old-space-size=8192
 
 jobs:
@@ -42,13 +37,8 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v6
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
+          python-version: '3.12'
           architecture: x64
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v5
-        with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: Install system dependencies
         run: |
@@ -56,61 +46,14 @@ jobs:
           sudo apt-get install -y sqlite3 libsqlite3-dev pkg-config
           python -m pip install --upgrade pip setuptools
 
-      - name: Restore build cache
-        uses: actions/cache/restore@v5
-        id: build-cache
-        with:
-          key: build_cache-${{ hashFiles('build/.cachesalt', 'package-lock.json') }}
-          path: .build/build_cache
-
-      - name: Extract build cache
-        if: steps.build-cache.outputs.cache-hit == 'true'
-        run: tar -xzf .build/build_cache/cache.tgz
-
       - name: Install dependencies
-        if: steps.build-cache.outputs.cache-hit != 'true'
         run: npm ci
-
-      - name: Create build cache archive
-        if: steps.build-cache.outputs.cache-hit != 'true'
-        run: |
-          set -e
-          mkdir -p .build
-          node build/listBuildCacheFiles.js .build/build_cache_list.txt
-          mkdir -p .build/build_cache
-          tar -czf .build/build_cache/cache.tgz --files-from .build/build_cache_list.txt
-
-      - name: Cache emsdk
-        uses: actions/cache@v4
-        id: emsdk-cache
-        with:
-          key: emsdk-${{ runner.os }}-${{ env.EMSDK_VERSION }}-${{ env.EMSDK_COMMIT }}
-          path: ${{ env.EMSDK_DIR }}
-
-      - name: Install emsdk
-        if: steps.emsdk-cache.outputs.cache-hit != 'true'
-        run: |
-          rm -rf "${EMSDK_DIR}"
-          git clone https://github.com/emscripten-core/emsdk.git "${EMSDK_DIR}"
-          cd "${EMSDK_DIR}"
-          git reset --hard "${EMSDK_COMMIT}"
-          ./emsdk install "${EMSDK_VERSION}"
-
-      - name: Activate emsdk
-        run: |
-          cd "${EMSDK_DIR}"
-          ./emsdk activate "${EMSDK_VERSION}"
-          echo "${EMSDK_DIR}" >> "${GITHUB_PATH}"
-          echo "${EMSDK_DIR}/upstream/emscripten" >> "${GITHUB_PATH}"
 
       - name: Verify toolchain
         run: |
           node --version
           npm --version
           python --version
-          dotnet --version
-          sqlite3 --version
-          emcc --version
 
       - name: Build extension
         run: npm run build
@@ -124,7 +67,10 @@ jobs:
       - name: Package VSIX
         run: |
           mkdir -p .artifacts
-          npx @vscode/vsce package --allow-package-secrets=sendgrid --out ".artifacts/${{ steps.meta.outputs.name }}-${{ steps.meta.outputs.version }}.vsix"
+          npx @vscode/vsce package --allow-package-secrets sendgrid --out ".artifacts/${{ steps.meta.outputs.name }}-${{ steps.meta.outputs.version }}.vsix"
+
+      - name: Verify VSIX artifact
+        run: ls -la .artifacts/
 
       - name: Upload VSIX artifact
         uses: actions/upload-artifact@v7
