@@ -34,16 +34,17 @@ export function authBlockedMiddleware(
 		}
 
 		// Still blocked?
-		if (currentToken && currentToken === blockedToken && Date.now() < blockedUntil) {
-			throw new AuthBlockedError(blockedUntil - Date.now());
-		}
+		// if (currentToken && currentToken === blockedToken && Date.now() < blockedUntil) {
+		// 	throw new AuthBlockedError(blockedUntil - Date.now());
+		// }
 
 		const response = await next(request);
 
 		if ((response.status === 401 || response.status === 403) && currentToken) {
-			blockedToken = currentToken;
-			blockedUntil = Date.now() + blockDurationMs;
-			throw new AuthBlockedError(blockDurationMs);
+			// #TODO: implement retry logic
+			// blockedToken = currentToken;
+			// blockedUntil = Date.now() + blockDurationMs;
+			// throw new AuthBlockedError(blockDurationMs);
 		}
 
 		return response;
