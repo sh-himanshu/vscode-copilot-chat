@@ -124,7 +124,7 @@ jobs:
       - name: Package VSIX
         run: |
           mkdir -p .artifacts
-          ./node_modules/.bin/vsce package --allow-package-secrets sendgrid --out ".artifacts/${{ steps.meta.outputs.name }}-${{ steps.meta.outputs.version }}.vsix"
+          npx @vscode/vsce package --allow-package-secrets=sendgrid --out ".artifacts/${{ steps.meta.outputs.name }}-${{ steps.meta.outputs.version }}.vsix"
 
       - name: Upload VSIX artifact
         uses: actions/upload-artifact@v7
